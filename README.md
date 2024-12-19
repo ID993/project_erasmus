@@ -16,4 +16,8 @@ This project is part of a university assignment, focusing on building a web appl
 - JWT-based authentication
 - Basic error handling and form validation
 
+## Contributors
+- Ivo Damjanović
+- Ivan Kovačević
+- Ana Miljak Karlo
 
