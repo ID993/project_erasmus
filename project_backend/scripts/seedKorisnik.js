@@ -3,6 +3,7 @@ const bcrypt = require("bcrypt");
 require("dotenv").config();
 
 const Korisnik = require("../models/Korisnik");
+const Uloga = require("../models/Uloga");
 
 const connectDB = async () => {
   console.log(process.env.MONGO_URI);
@@ -22,162 +23,76 @@ const korisnici = [
   {
     ime: "Ivo",
     prezime: "Damjanovic",
-    email: "ivo.d@example.com",
+    email: "ivo@mail.com",
     sifra: "pass",
+    uloga: "admin",
   },
-  { ime: "Ana", prezime: "Maric", email: "ana.m@example.com", sifra: "pass" },
+  {
+    ime: "Ana",
+    prezime: "Maric",
+    email: "ana.m@example.com",
+    sifra: "pass",
+    uloga: "profesor",
+  },
   {
     ime: "Marko",
     prezime: "Horvat",
     email: "marko.h@example.com",
     sifra: "pass",
+    uloga: "student",
   },
   {
     ime: "Petar",
     prezime: "Jurić",
     email: "petar.juric@example.com",
     sifra: "pass",
+    uloga: "student",
   },
   {
     ime: "Marija",
     prezime: "Novak",
     email: "marija.novak@example.com",
     sifra: "pass",
-  },
-  {
-    ime: "Ivana",
-    prezime: "Perić",
-    email: "ivana.peric@example.com",
-    sifra: "pass",
-  },
-  {
-    ime: "Luka",
-    prezime: "Babić",
-    email: "luka.babic@example.com",
-    sifra: "pass",
-  },
-  {
-    ime: "Ana",
-    prezime: "Kovač",
-    email: "ana.kovac@example.com",
-    sifra: "pass",
-  },
-  {
-    ime: "Davor",
-    prezime: "Šimić",
-    email: "davor.simic@example.com",
-    sifra: "pass",
-  },
-  {
-    ime: "Maja",
-    prezime: "Horvat",
-    email: "maja.horvat@example.com",
-    sifra: "pass",
-  },
-  {
-    ime: "Tomislav",
-    prezime: "Zorić",
-    email: "tomislav.zoric@example.com",
-    sifra: "pass",
-  },
-  {
-    ime: "Katarina",
-    prezime: "Božić",
-    email: "katarina.bozic@example.com",
-    sifra: "pass",
-  },
-  {
-    ime: "Filip",
-    prezime: "Grgić",
-    email: "filip.grgic@example.com",
-    sifra: "pass",
-  },
-  {
-    ime: "Martina",
-    prezime: "Lovrić",
-    email: "martina.lovric@example.com",
-    sifra: "pass",
-  },
-  {
-    ime: "Josip",
-    prezime: "Čupić",
-    email: "josip.cupic@example.com",
-    sifra: "pass",
-  },
-  {
-    ime: "Lea",
-    prezime: "Milić",
-    email: "lea.milic@example.com",
-    sifra: "pass",
-  },
-  {
-    ime: "Andrej",
-    prezime: "Radnić",
-    email: "andrej.radnic@example.com",
-    sifra: "pass",
-  },
-  {
-    ime: "Helena",
-    prezime: "Zidar",
-    email: "helena.zidar@example.com",
-    sifra: "pass",
-  },
-  {
-    ime: "Marko",
-    prezime: "Šarić",
-    email: "marko.saric@example.com",
-    sifra: "pass",
-  },
-  {
-    ime: "Sara",
-    prezime: "Lukić",
-    email: "sara.lukic@example.com",
-    sifra: "pass",
-  },
-  {
-    ime: "Nikola",
-    prezime: "Barić",
-    email: "nikola.baric@example.com",
-    sifra: "pass",
-  },
-  {
-    ime: "Nina",
-    prezime: "Krnić",
-    email: "nina.krnic@example.com",
-    sifra: "pass",
-  },
-  {
-    ime: "Ema",
-    prezime: "Živković",
-    email: "ema.zivkovic@example.com",
-    sifra: "pass",
+    uloga: "profesor",
   },
 ];
 
-const populateKorisnici = async () => {
+const populateDatabase = async () => {
   try {
     await Korisnik.deleteMany();
+    console.log("Existing users cleared!");
+
+    const roles = await Uloga.find();
+    const roleMap = roles.reduce((acc, role) => {
+      acc[role.naziv] = role._id;
+      return acc;
+    }, {});
+    console.log("Roles fetched:", roleMap);
 
     const hashedKorisnici = await Promise.all(
       korisnici.map(async (korisnik) => {
         const hashedPassword = await bcrypt.hash(korisnik.sifra, 10);
-        return { ...korisnik, sifra: hashedPassword };
+        return {
+          ...korisnik,
+          sifra: hashedPassword,
+          uloga: [roleMap[korisnik.uloga]],
+        };
       })
     );
 
     await Korisnik.insertMany(hashedKorisnici);
-    console.log("Korisnici added to the database!");
+    console.log("Users populated!");
 
     process.exit();
   } catch (err) {
-    console.error("Error populating Korisnici:", err.message);
+    console.error("Error populating database:", err.message);
     process.exit(1);
   }
 };
 
 const runScript = async () => {
   await connectDB();
-  await populateKorisnici();
+  await populateDatabase();
 };
 
 runScript();

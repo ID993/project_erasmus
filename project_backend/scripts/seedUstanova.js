@@ -2,18 +2,10 @@
 const mongoose = require("mongoose");
 require("dotenv").config(); // Load .env variables
 
-// Ustanova schema and model
-const UstanovaSchema = new mongoose.Schema({
-  ime: { type: String, required: true },
-  adresa: { type: String, required: true },
-  drzava: { type: String, required: true },
-  kontakt: { type: String, required: false },
-});
-
-const Ustanova = mongoose.model("Ustanova", UstanovaSchema);
+const Ustanova = require("../models/Ustanova");
+const Smjer = require("../models/Smjer");
 
 const ustanove = [
-  // Croatian Universities
   {
     ime: "Sveučilište u Zagrebu",
     adresa: "Trg Republike Hrvatske 14",
@@ -50,7 +42,6 @@ const ustanove = [
     drzava: "Hrvatska",
     kontakt: "020 456 789",
   },
-
   {
     ime: "Universität Wien",
     adresa: "Universitätsring 1",
@@ -144,24 +135,37 @@ const connectDB = async () => {
   }
 };
 
-const populateUstanova = async () => {
+const addSmjerToUstanova = async () => {
   try {
     await Ustanova.deleteMany();
-    console.log("Existing Ustanova entries cleared.");
+    console.log("Existing Ustanova entries cleared!");
 
-    await Ustanova.insertMany(ustanove);
-    console.log("Ustanove added to the database!");
+    const smjerovi = await Smjer.find();
+    if (!smjerovi.length) {
+      console.log("No Smjer entries found! Populate Smjer first.");
+      process.exit(1);
+    }
+
+    const smjerIds = smjerovi.map((smjer) => smjer._id);
+
+    const updatedUstanove = ustanove.map((ustanova) => ({
+      ...ustanova,
+      smjerovi: smjerIds,
+    }));
+
+    await Ustanova.insertMany(updatedUstanove);
+    console.log("Ustanove populated with Smjer references!");
 
     process.exit();
   } catch (err) {
-    console.error("Error populating Ustanova:", err.message);
+    console.error("Error updating Ustanova:", err.message);
     process.exit(1);
   }
 };
 
 const runScript = async () => {
   await connectDB();
-  await populateUstanova();
+  await addSmjerToUstanova();
 };
 
 runScript();
