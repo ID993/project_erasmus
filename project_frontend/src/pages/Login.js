@@ -1,81 +1,93 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
+import { IoMdEye, IoMdEyeOff } from "react-icons/io";
 
 const Login = () => {
-    // Declare state for the form fields and error message
-    const [email, setEmail] = useState('');
-    const [sifra, setSifra] = useState('');
-    const [error, setError] = useState('');
+    const [userCredentials, setUserCredentials] = useState({
+        email: "",
+        sifra: "",
+    });
+    const [showPassword, setShowPassword] = useState(false);
+    const [error, setError] = useState("");
     const [success, setSuccess] = useState(false);
+
+    const handleChange = (e) => {
+        setUserCredentials({ ...userCredentials, [e.target.name]: e.target.value });
+    };
 
     const handleLogin = async (e) => {
         e.preventDefault();
 
-        // Basic validation
-        if (!email || !sifra) {
-            setError('Email and password are required');
+        if (!userCredentials.email || !userCredentials.sifra) {
+            setError("Email and password are required");
             return;
         }
 
-        const user = { email, sifra };
-
-        console.log('User object (email + password):', user);  // Log the request body to check
-
         try {
-            const response = await fetch('http://localhost:5000/api/auth/login', {
-                method: 'POST',  // Ensure it's a POST request
+            const response = await fetch("http://localhost:5000/api/auth/login", {
+                method: "POST",
                 headers: {
-                    'Content-Type': 'application/json',
+                    "Content-Type": "application/json",
                 },
-                body: JSON.stringify(user),
+                body: JSON.stringify(userCredentials),
             });
 
-            // Check if response is okay (status 200-299)
             if (!response.ok) {
-                const data = await response.json(); // Get the response body
-                setError(data.message || 'Failed to login');
-                return; // Stop further execution if the response is not OK
+                const data = await response.json();
+                setError(data.message || "Failed to login");
+                return;
             }
 
-            // If the response is okay, parse the data
             const data = await response.json();
             setSuccess(true);
-            alert('Login successful');
-            localStorage.setItem('token', data.token); // Store the token in localStorage
-
+            alert("Login successful");
+            localStorage.setItem("token", data.token);
         } catch (err) {
-            setError('Failed to connect to the server');
-            console.error('Login Error:', err);
+            setError("Failed to connect to the server");
+            console.error("Login Error:", err);
         }
     };
 
+    const toggleShowPassword = () => {
+        setShowPassword(!showPassword);
+    };
+
     return (
-        <div>
-            <h2>Login</h2>
-
-            {/* Display success message */}
+        <div className="flex flex-col items-center space-y-6 py-10 px-4 bg-gray-50">
+            <h2 className="text-2xl font-bold">Login</h2>
             {success && <div>Login successful!</div>}
-
-            {/* Display error message */}
-            {error && <div style={{ color: 'red' }}>{error}</div>}
-
-            <form onSubmit={handleLogin}>
+            {error && <div style={{ color: "red" }}>{error}</div>}
+            <form onSubmit={handleLogin} className="flex flex-col space-y-4 w-full max-w-md">
                 <input
                     type="email"
+                    name="email"
+                    value={userCredentials.email}
+                    onChange={handleChange}
                     placeholder="Email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)} // Handle email change
+                    className="p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
-                <input
-                    type="password"
-                    placeholder="Password"
-                    value={sifra}
-                    onChange={(e) => setSifra(e.target.value)} // Handle password change
-                />
-                <button type="submit">Login</button>
+                <div className="relative">
+                    <input
+                        type={showPassword ? "text" : "password"}
+                        name="sifra"
+                        value={userCredentials.sifra}
+                        onChange={handleChange}
+                        placeholder="Password"
+                        className="p-3 border border-gray-300 rounded w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <div
+                        onClick={toggleShowPassword}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 cursor-pointer text-gray-500">
+                        {showPassword ? <IoMdEyeOff /> : <IoMdEye />}
+                    </div>
+                </div>
+                <button
+                    type="submit"
+                    className="bg-blue-500 text-white p-3 rounded hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    Login
+                </button>
             </form>
         </div>
     );
 };
-
 
 export default Login;

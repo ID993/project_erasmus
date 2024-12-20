@@ -26,7 +26,15 @@ body {
     }
 
 .navbar {
+    display: flex;
+    justify-content: space-between; /* Space out the left and right sections */
+    align-items: center;
     margin-top: 10px;
+}
+
+.left-nav, .right-nav {
+    display: flex;
+    gap: 20px;
 }
 
 .nav-link {

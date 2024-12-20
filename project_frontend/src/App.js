@@ -12,9 +12,13 @@ const App = () => {
                 <header className="app-header">
                     <h1>Erasmus Mobility Program</h1>
                     <nav className="navbar">
-                        <Link to="/login" className="nav-link">Login</Link>
-                        <Link to="/register" className="nav-link">Register</Link>
-                        <Link to="/application" className="nav-link">Send Application</Link> {/* New Button */}
+                        <div className="left-nav">
+                            <Link to="/login" className="nav-link">Login</Link>
+                            <Link to="/register" className="nav-link">Register</Link>
+                        </div>
+                        <div className="right-nav">
+                            <Link to="/application" className="nav-link">Send Application</Link>
+                        </div>
                     </nav>
                 </header>
 
@@ -22,7 +26,7 @@ const App = () => {
                     <Routes>
                         <Route path="/login" element={<Login />} />
                         <Route path="/register" element={<Register />} />
-                        <Route path="/application" element={<Application />} /> {/* New Route */}
+                        <Route path="/application" element={<Application />} />
                     </Routes>
                 </main>
 

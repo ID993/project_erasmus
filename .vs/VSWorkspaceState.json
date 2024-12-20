@@ -8,9 +8,8 @@
     "\\project_backend\\routes",
     "\\project_frontend",
     "\\project_frontend\\src",
-    "\\project_frontend\\src\\models",
     "\\project_frontend\\src\\pages"
   ],
-  "SelectedNode": "\\project_backend\\config\\db.js",
+  "SelectedNode": "\\project_backend\\routes\\Auth.js",
   "PreviewInSolutionExplorer": false
 }
