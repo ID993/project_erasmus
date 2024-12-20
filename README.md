@@ -15,6 +15,7 @@ This project is part of a university assignment, focusing on building a web appl
 - Password hashing and secure storage
 - JWT-based authentication
 - Basic error handling and form validation
+- Basic form for sending application for Erasmus
 
 ## Contributors
 - Ivo Damjanović
