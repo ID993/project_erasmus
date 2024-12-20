@@ -1,0 +1,16 @@
+{
+  "ExpandedNodes": [
+    "",
+    "\\project_backend",
+    "\\project_backend\\config",
+    "\\project_backend\\controllers",
+    "\\project_backend\\models",
+    "\\project_backend\\routes",
+    "\\project_frontend",
+    "\\project_frontend\\src",
+    "\\project_frontend\\src\\models",
+    "\\project_frontend\\src\\pages"
+  ],
+  "SelectedNode": "\\project_backend\\config\\db.js",
+  "PreviewInSolutionExplorer": false
+}

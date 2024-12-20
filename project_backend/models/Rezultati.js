@@ -1,30 +1,25 @@
-module.exports = (sequelize, DataTypes) => {
-    const Rezultati = sequelize.define('Rezultati', {
-        rezultati_id: {
-            type: DataTypes.INTEGER,
-            primaryKey: true,
-            autoIncrement: true
-        },
-        ocjena: {
-            type: DataTypes.INTEGER,
-            allowNull: false
-        },
-        komentar: {
-            type: DataTypes.STRING,
-            allowNull: true
-        }
-    });
+const mongoose = require('mongoose');
 
-    Rezultati.associate = (models) => {
-        Rezultati.belongsTo(models.Korisnik, {
-            foreignKey: 'korisnik_id',
-            as: 'korisnik'
-        });
-        Rezultati.belongsTo(models.Program, {
-            foreignKey: 'program_id',
-            as: 'program'
-        });
-    };
+const resultsSchema = new mongoose.Schema({
+    score: {
+        type: Number,
+        required: true,
+        min: 0, // Minimum score, customize as needed
+    },
+    comments: {
+        type: String,
+        required: false, // Optional field
+    },
+    userId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User', // Reference to the User collection
+        required: true,
+    },
+    programId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Program', // Reference to the Program collection
+        required: true,
+    },
+}, { timestamps: true });
 
-    return Rezultati;
-};
+module.exports = mongoose.model('Results', resultsSchema);
