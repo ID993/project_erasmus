@@ -1,8 +1,9 @@
 // /backend/controllers/authController.js
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const Korisnik = require("../models/Korisnik");
+const Korisnik = require("../models/Korisnik"); // Ensure you're importing the model correctly
 const dotenv = require("dotenv").config();
+// Secret key for JWT
 const JWT_SECRET = process.env.JWT_SECRET || "SuperDuperSecretKey12345";
 
 async function hashPassword(password) {
