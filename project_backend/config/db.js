@@ -1,8 +1,8 @@
 // /backend/config/db.js
 const mongoose = require("mongoose");
+require("dotenv").config();
 
-const uri =
-  "mongodb+srv://ivodamjanovic4:avp@avperasmus.rcf10.mongodb.net/?retryWrites=true&w=majority&appName=avperasmus";
+const uri = process.env.MONGO_URI;
 
 const connectDB = async () => {
   try {
