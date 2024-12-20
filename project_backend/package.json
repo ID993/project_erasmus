@@ -5,7 +5,10 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "populate-korisnik": "node ./scripts/seedKorisnik.js",
-    "populate-ustanova": "node ./scripts/seedUstanova.js"
+    "populate-ustanova": "node ./scripts/seedUstanova.js",
+    "populate-smjer": "node ./scripts/seedSmjer.js",
+    "populate-program": "node ./scripts/seedProgram.js",
+    "populate-uloga": "node ./scripts/seedUloga.js"
   },
   "keywords": [],
   "author": "",

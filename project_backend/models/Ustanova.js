@@ -1,38 +1,40 @@
-module.exports = (sequelize, DataTypes) => {
-  const Ustanova = sequelize.define("Ustanova", {
-    ustanova_id: {
-      type: DataTypes.INTEGER,
-      primaryKey: true,
-      autoIncrement: true,
-    },
+const mongoose = require("mongoose");
+
+const ustanovaSchema = new mongoose.Schema(
+  {
     ime: {
-      type: DataTypes.STRING,
-      allowNull: false,
+      type: String,
+      required: true,
     },
     adresa: {
-      type: DataTypes.STRING,
-      allowNull: false,
+      type: String,
+      required: true,
     },
     drzava: {
-      type: DataTypes.STRING,
-      allowNull: false,
+      type: String,
+      required: true,
     },
     kontakt: {
-      type: DataTypes.STRING,
-      allowNull: true,
+      type: String,
+      required: false,
     },
-  });
 
-  Ustanova.associate = (models) => {
-    Ustanova.hasMany(models.Smjer, {
-      foreignKey: "ustanova_id",
-      as: "smjerovi",
-    });
-    Ustanova.hasMany(models.Prijava, {
-      foreignKey: "ustanova_id",
-      as: "prijave",
-    });
-  };
+    smjerovi: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Smjer",
+      },
+    ],
+    prijave: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Prijava",
+      },
+    ],
+  },
+  { timestamps: true }
+);
 
-  return Ustanova;
-};
+const Ustanova = mongoose.model("Ustanova", ustanovaSchema);
+
+module.exports = Ustanova;
