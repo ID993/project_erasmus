@@ -8,7 +8,8 @@
     "populate-ustanova": "node ./scripts/seedUstanova.js",
     "populate-smjer": "node ./scripts/seedSmjer.js",
     "populate-program": "node ./scripts/seedProgram.js",
-    "populate-uloga": "node ./scripts/seedUloga.js"
+    "populate-uloga": "node ./scripts/seedUloga.js",
+    "populate-drzava": "node ./scripts/seedDrzava.js"
   },
   "keywords": [],
   "author": "",

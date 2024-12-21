@@ -1,9 +1,9 @@
-// scripts/populateUstanova.js
 const mongoose = require("mongoose");
-require("dotenv").config(); // Load .env variables
+require("dotenv").config();
 
 const Ustanova = require("../models/Ustanova");
 const Smjer = require("../models/Smjer");
+const Drzava = require("../models/Drzava");
 
 const ustanove = [
   {
@@ -135,10 +135,16 @@ const connectDB = async () => {
   }
 };
 
-const addSmjerToUstanova = async () => {
+const populateUstanove = async () => {
   try {
     await Ustanova.deleteMany();
     console.log("Existing Ustanova entries cleared!");
+
+    const drzave = await Drzava.find();
+    if (!drzave.length) {
+      console.log("No Drzave entries found! Populate Drzave first.");
+      process.exit(1);
+    }
 
     const smjerovi = await Smjer.find();
     if (!smjerovi.length) {
@@ -146,26 +152,32 @@ const addSmjerToUstanova = async () => {
       process.exit(1);
     }
 
+    const drzavaMap = drzave.reduce((map, drzava) => {
+      map[drzava.naziv] = drzava._id;
+      return map;
+    }, {});
+
     const smjerIds = smjerovi.map((smjer) => smjer._id);
 
-    const updatedUstanove = ustanove.map((ustanova) => ({
-      ...ustanova,
+    const updatedUstanove = ustanove.map((u) => ({
+      ...u,
+      drzava: drzavaMap[u.drzava],
       smjerovi: smjerIds,
     }));
 
     await Ustanova.insertMany(updatedUstanove);
-    console.log("Ustanove populated with Smjer references!");
+    console.log("Ustanove populated with Smjer and Država references!");
 
     process.exit();
   } catch (err) {
-    console.error("Error updating Ustanova:", err.message);
+    console.error("Error populating Ustanove:", err.message);
     process.exit(1);
   }
 };
 
 const runScript = async () => {
   await connectDB();
-  await addSmjerToUstanova();
+  await populateUstanove();
 };
 
 runScript();
