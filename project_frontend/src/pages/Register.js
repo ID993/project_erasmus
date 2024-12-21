@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 const Register = () => {
     const [userCredentials, setUserCredentials] = useState({
@@ -6,9 +6,36 @@ const Register = () => {
         prezime: "",
         email: "",
         sifra: "",
+        ustanova: "",
+        uloga: "",
     });
+    const [institutions, setInstitutions] = useState([]);
+    const [roles, setRoles] = useState([]);
     const [error, setError] = useState("");
     const [success, setSuccess] = useState(false);
+
+    useEffect(() => {
+        // Fetch institutions and roles
+        const fetchData = async () => {
+            try {
+                const institutionsRes = await fetch("http://localhost:5000/api/auth/institutions");
+                const rolesRes = await fetch("http://localhost:5000/api/auth/roles");
+
+                const institutionsData = await institutionsRes.json();
+                const rolesData = await rolesRes.json();
+
+                // Filter out "Admin" role
+                const filteredRoles = rolesData.filter(role => role.naziv !== "admin");
+
+                setInstitutions(institutionsData);
+                setRoles(filteredRoles);
+            } catch (err) {
+                console.error("Failed to fetch data:", err);
+            }
+        };
+
+        fetchData();
+    }, []);
 
     const handleChange = (e) => {
         setUserCredentials({ ...userCredentials, [e.target.name]: e.target.value });
@@ -17,17 +44,10 @@ const Register = () => {
     const handleRegister = async (e) => {
         e.preventDefault();
 
-        if (!userCredentials.ime || !userCredentials.prezime || !userCredentials.email || !userCredentials.sifra) {
-            setError("All fields are required");
-            return;
-        }
-
         try {
             const response = await fetch("http://localhost:5000/api/auth/register", {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(userCredentials),
             });
 
@@ -57,7 +77,7 @@ const Register = () => {
                     value={userCredentials.ime}
                     onChange={handleChange}
                     placeholder="First Name"
-                    className="p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
                 />
                 <input
                     type="text"
@@ -65,7 +85,7 @@ const Register = () => {
                     value={userCredentials.prezime}
                     onChange={handleChange}
                     placeholder="Last Name"
-                    className="p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
                 />
                 <input
                     type="email"
@@ -73,7 +93,7 @@ const Register = () => {
                     value={userCredentials.email}
                     onChange={handleChange}
                     placeholder="Email"
-                    className="p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
                 />
                 <input
                     type="password"
@@ -81,11 +101,37 @@ const Register = () => {
                     value={userCredentials.sifra}
                     onChange={handleChange}
                     placeholder="Password"
-                    className="p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
                 />
+                <select
+                    name="ustanova"
+                    value={userCredentials.ustanova}
+                    onChange={handleChange}
+                    className="p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
+                >
+                    <option value="">Select Institution</option>
+                    {institutions.map((inst) => (
+                        <option key={inst._id} value={inst._id}>
+                            {inst.ime}
+                        </option>
+                    ))}
+                </select>
+                <select
+                    name="uloga"
+                    value={userCredentials.uloga}
+                    onChange={handleChange}
+                    className="p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
+                >
+                    <option value="">Select Role</option>
+                    {roles.map((role) => (
+                        <option key={role._id} value={role._id}>
+                            {role.naziv}
+                        </option>
+                    ))}
+                </select>
                 <button
                     type="submit"
-                    className="bg-blue-500 text-white p-3 rounded hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    className="bg-blue-500 text-white p-3 rounded hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full">
                     Register
                 </button>
             </form>

@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { IoMdEye, IoMdEyeOff } from "react-icons/io";
+import { useNavigate } from "react-router-dom";
 
-const Login = () => {
+const Login = ({ setIsLoggedIn }) => {
     const [userCredentials, setUserCredentials] = useState({
         email: "",
         sifra: "",
@@ -9,6 +10,8 @@ const Login = () => {
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState("");
     const [success, setSuccess] = useState(false);
+
+    const navigate = useNavigate();
 
     const handleChange = (e) => {
         setUserCredentials({ ...userCredentials, [e.target.name]: e.target.value });
@@ -39,8 +42,12 @@ const Login = () => {
 
             const data = await response.json();
             setSuccess(true);
-            alert("Login successful");
             localStorage.setItem("token", data.token);
+
+            // Update isLoggedIn state and navigate to dashboard
+            setIsLoggedIn(true);
+            alert("Login successful");
+            navigate("/dashboard");
         } catch (err) {
             setError("Failed to connect to the server");
             console.error("Login Error:", err);

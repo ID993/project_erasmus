@@ -1,7 +1,9 @@
-import React, { useState } from "react";
-import './Application.css';  // Import the CSS for styling
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import './Application.css';
 
 const Application = () => {
+    const navigate = useNavigate();
     const [formData, setFormData] = useState({
         gpa: "",
         firstMobility: null,
@@ -9,11 +11,81 @@ const Application = () => {
         englishProficiency: null,
         destinationLanguage: null,
         initiatedLLP: null,
+        country: "",
+        institution: "",
     });
 
+    const [countries, setCountries] = useState([]);
+    const [institutions, setInstitutions] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [successMessage, setSuccessMessage] = useState("");
+    const [userCountry, setUserCountry] = useState("");
+
+    const userToken = localStorage.getItem("token");
+    const [isLoggedIn, setIsLoggedIn] = useState(userToken ? true : false);
+
+    useEffect(() => {
+        if (!isLoggedIn) {
+            alert("You must be logged in to access the application form.");
+            navigate("/login");
+        }
+    }, [isLoggedIn, navigate]);
+
+    useEffect(() => {
+        if (isLoggedIn) {
+            const fetchCountries = async () => {
+                try {
+                    const response = await fetch("http://localhost:5000/api/countries", {
+                        headers: {
+                            "Authorization": `Bearer ${userToken}`,
+                        },
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+
+                    const data = await response.json();
+                    setCountries(data);
+                } catch (error) {
+                    console.error("Error fetching countries:", error);
+                    setError("Failed to load countries.");
+                }
+            };
+
+            fetchCountries();
+        }
+    }, [isLoggedIn, userToken]);
+
+    const handleCountryChange = async (e) => {
+        const selectedCountry = e.target.value;  // This should be the country name, not the ID
+        setFormData({ ...formData, country: selectedCountry, institution: "" });
+
+        try {
+            const response = await fetch(
+                `http://localhost:5000/api/applications/institutions/${selectedCountry}`, // Pass the country name here
+                {
+                    headers: {
+                        "Authorization": `Bearer ${userToken}`,
+                    },
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error(`Failed to fetch institutions: ${response.status}`);
+            }
+            const data = await response.json();
+            setInstitutions(data);
+        } catch (error) {
+            console.error("Error fetching institutions:", error);
+            setError("Failed to load institutions.");
+        }
+    };
+
+    const handleInstitutionChange = (e) => {
+        setFormData({ ...formData, institution: e.target.value });
+    };
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -26,9 +98,8 @@ const Application = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        // Client-side validation
-        if (formData.gpa < 3.0 || formData.gpa > 5.0) {
-            alert("GPA must be between 3.0 and 5.0.");
+        if (!userToken) {
+            alert("You must be logged in to submit the application.");
             return;
         }
 
@@ -41,8 +112,12 @@ const Application = () => {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
+                    "Authorization": `Bearer ${userToken}`,
                 },
-                body: JSON.stringify(formData),
+                body: JSON.stringify({
+                    ...formData,
+                    userId: "loggedInUserId",
+                }),
             });
 
             if (response.ok) {
@@ -86,6 +161,10 @@ const Application = () => {
         </div>
     );
 
+    if (!isLoggedIn) {
+        return null;
+    }
+
     return (
         <div className="application-container">
             <h2>Send Application</h2>
@@ -108,6 +187,48 @@ const Application = () => {
                         placeholder="Enter your GPA"
                     />
                 </div>
+
+                <div className="form-group">
+                    <label htmlFor="country">Select Country:</label>
+                    <select
+                        id="country"
+                        name="country"
+                        value={formData.country}
+                        onChange={handleCountryChange}
+                        required
+                    >
+                        <option value="">-- Select a Country --</option>
+                        {countries.map((country) => (
+                            <option key={country._id} value={country.naziv}> {/* Use country.naziv */}
+                                {country.naziv}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+
+                {formData.country && (
+                    <div className="form-group">
+                        <label htmlFor="institution">Select Institution:</label>
+                        <select
+                            id="institution"
+                            name="institution"
+                            value={formData.institution}
+                            onChange={handleInstitutionChange}
+                            required
+                        >
+                            <option value="">-- Select an Institution --</option>
+                            {institutions.length > 0 ? (
+                                institutions.map((institution) => (
+                                    <option key={institution._id} value={institution._id}>
+                                        {institution.ime}  {/* Render the 'ime' of the institution */}
+                                    </option>
+                                ))
+                            ) : (
+                                <option>No institutions found</option>
+                            )}
+                        </select>
+                    </div>
+                )}
 
                 <RadioGroup
                     label="First Mobility:"
