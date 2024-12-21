@@ -10,13 +10,14 @@ const ustanovaSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    drzava: {
-      type: String,
-      required: true,
-    },
     kontakt: {
       type: String,
       required: false,
+    },
+    drzava: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Drzava",
+      required: true,
     },
 
     smjerovi: [
