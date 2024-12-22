@@ -4,19 +4,30 @@ require("dotenv").config();
 const Program = require("../models/Program");
 
 const programi = [
-  { naziv: "Praksa", opis: "Student obavlja praksu na erasmus programu" },
+  {
+    naziv: "Praksa",
+    opis: "Student obavlja praksu na erasmus programu",
+    tip: "student",
+  },
   {
     naziv: "Diplomski/Završni rad",
     opis: "Student piše diplomski rad na erasmus programu",
+    tip: "student",
   },
   {
     naziv: "Pohađanje nastave",
     opis: "Student pohađa nastavu na erasmus programu",
+    tip: "student",
   },
-  { naziv: "Usavršavanje", opis: "Profesor se usavršava na erasmus programu" },
+  {
+    naziv: "Usavršavanje",
+    opis: "Profesor se usavršava na erasmus programu",
+    tip: "profesor",
+  },
   {
     naziv: "Održavanje predavanja",
     opis: "Profesor održava predavanja na erasmus programu",
+    tip: "profesor",
   },
 ];
 
