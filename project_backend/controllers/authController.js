@@ -78,7 +78,7 @@ const loginUser = async (req, res) => {
   try {
     const user = await Korisnik.findOne({ email });
     const role = await Uloga.findById(user.uloga);
-    console.log(role.naziv);
+
     if (!user) {
       return res.status(400).json({ message: "Invalid email or password" });
     }

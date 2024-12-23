@@ -5,12 +5,12 @@ import Register from "./pages/Register";
 import Application from "./pages/Application";
 import Dashboard from "./pages/Dashboard";
 import ProfessorApplication from "./pages/ProfessorApplication";
+import AllApplications from "./pages/AllApplications";
 import { jwtDecode } from "jwt-decode";
 import "./App.css";
 
 const getUserRole = (token) => {
   if (!token) return null;
-
   try {
     const decodedToken = jwtDecode(token);
     return decodedToken.uloga; // Extract the role from the token
@@ -34,7 +34,7 @@ const App = () => {
   const handleLogout = () => {
     localStorage.removeItem("token");
     setIsLoggedIn(false);
-    navigate("/"); // Redirect to homepage after logging out
+    navigate("/dashboard"); // Redirect to homepage after logging out
   };
 
   return (
@@ -57,12 +57,25 @@ const App = () => {
           <div className="right-nav">
             {isLoggedIn ? (
               <>
-                <Link to="/application" className="nav-link">
-                  Send Application
-                </Link>
+                {userRole === "student" && (
+                  <Link to="/application" className="nav-link">
+                    Send Application
+                  </Link>
+                )}
+
                 {userRole === "profesor" && (
                   <Link to="/professor-application" className="nav-link">
                     Professor Application
+                  </Link>
+                )}
+                {userRole === "admin" && (
+                  <Link to="/all-applications" className="nav-link">
+                    All appplications
+                  </Link>
+                )}
+                {userRole !== "admin" && (
+                  <Link to="/all-applications" className="nav-link">
+                    My appplications
                   </Link>
                 )}
                 <button
@@ -93,9 +106,10 @@ const App = () => {
           <Route path="/application" element={<Application />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route
-            path="profesor-application"
+            path="/professor-application"
             element={<ProfessorApplication />}
           />
+          <Route path="/all-applications" element={<AllApplications />} />
         </Routes>
       </main>
 

@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { jwtDecode } from "jwt-decode";
 
-const getUserInfo = (token) => {
+const getUserRole = (token) => {
   if (!token) {
     return null;
   }
 
   try {
     const decodedToken = jwtDecode(token);
-    return decodedToken;
+    return decodedToken.uloga;
   } catch (err) {
     console.error("Invalid token:", err);
     return null;
@@ -22,7 +22,7 @@ const ProfessorApplication = () => {
   const [selectedUstanova, setSelectedUstanova] = useState("");
   const [message, setMessage] = useState("");
   const userToken = localStorage.getItem("token");
-  const userRole = getUserInfo(userToken).uloga;
+  const userRole = getUserRole(userToken);
 
   useEffect(() => {
     const fetchOptions = async () => {
