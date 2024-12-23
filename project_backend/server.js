@@ -8,6 +8,7 @@ const countriesRoutes = require("./routes/Countries"); // Import countries route
 const programRoutes = require("./routes/ProgramRoute");
 const ustanovaRoutes = require("./routes/UstanovaRoute");
 const profesorPrijava = require("./routes/PrijavaProfesorRoute");
+const prijavaRoutes = require("./routes/PrijavaRoute");
 
 // This line ensures MongoDB connection is established when the server runs
 require("./config/db"); // Import the MongoDB connection
@@ -36,6 +37,8 @@ app.use("/api/ustanove", ustanovaRoutes);
 app.use("/api/programi", programRoutes);
 
 app.use("/api/professor-application", profesorPrijava);
+
+app.use("/api/application", prijavaRoutes);
 
 // Listen on port 5000
 app.listen(5000, () => {
