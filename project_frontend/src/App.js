@@ -4,7 +4,6 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Application from "./pages/Application";
 import Dashboard from "./pages/Dashboard";
-import ProfessorApplication from "./pages/ProfessorApplication";
 import AllApplications from "./pages/AllApplications";
 import { jwtDecode } from "jwt-decode";
 import "./App.css";
@@ -57,17 +56,12 @@ const App = () => {
           <div className="right-nav">
             {isLoggedIn ? (
               <>
-                {userRole === "student" && (
+                {(userRole === "student" || userRole === "profesor") && (
                   <Link to="/application" className="nav-link">
                     Send Application
                   </Link>
                 )}
 
-                {userRole === "profesor" && (
-                  <Link to="/professor-application" className="nav-link">
-                    Professor Application
-                  </Link>
-                )}
                 {userRole === "admin" && (
                   <Link to="/all-applications" className="nav-link">
                     All appplications
@@ -105,10 +99,7 @@ const App = () => {
           <Route path="/register" element={<Register />} />
           <Route path="/application" element={<Application />} />
           <Route path="/dashboard" element={<Dashboard />} />
-          <Route
-            path="/professor-application"
-            element={<ProfessorApplication />}
-          />
+
           <Route path="/all-applications" element={<AllApplications />} />
         </Routes>
       </main>
