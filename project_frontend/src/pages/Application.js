@@ -3,10 +3,22 @@ import { useNavigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import "./Application.css";
 
+const getUserRole = (token) => {
+  if (!token) return null;
+
+  try {
+    const decodedToken = jwtDecode(token);
+    return decodedToken.uloga;
+  } catch (err) {
+    console.error("Invalid token:", err);
+    return null;
+  }
+};
+
 const Application = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    gpa: "",
+    gpa: "1.0",
     firstMobility: null,
     motivationLetter: null,
     englishProficiency: null,
@@ -14,6 +26,7 @@ const Application = () => {
     initiatedLLP: null,
     country: "",
     institution: "",
+    program: "",
   });
 
   const [countries, setCountries] = useState([]);
@@ -22,8 +35,10 @@ const Application = () => {
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState("");
   const [userCountry, setUserCountry] = useState("");
+  const [programs, setPrograms] = useState([]);
 
   const userToken = localStorage.getItem("token");
+  const userRole = getUserRole(userToken);
 
   const [isLoggedIn, setIsLoggedIn] = useState(userToken ? true : false);
 
@@ -35,14 +50,41 @@ const Application = () => {
   }, [isLoggedIn, navigate]);
 
   useEffect(() => {
+    const fetchOptions = async () => {
+      try {
+        const programResponse = await fetch(
+          "http://localhost:5000/api/programi/by-role",
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
+        );
+
+        const programData = await programResponse.json();
+        setPrograms(programData.data);
+      } catch (error) {
+        console.error("Error fetching options:", error);
+      }
+    };
+
+    fetchOptions();
+  }, []);
+
+  useEffect(() => {
     if (isLoggedIn) {
       const fetchCountries = async () => {
         try {
-          const response = await fetch("http://localhost:5000/api/countries", {
-            headers: {
-              Authorization: `Bearer ${userToken}`,
-            },
-          });
+          const response = await fetch(
+            "http://localhost:5000/api/countries/not-from",
+            {
+              headers: {
+                Authorization: `Bearer ${userToken}`,
+              },
+            }
+          );
 
           if (!response.ok) {
             throw new Error(`HTTP error! Status: ${response.status}`);
@@ -87,6 +129,10 @@ const Application = () => {
 
   const handleInstitutionChange = (e) => {
     setFormData({ ...formData, institution: e.target.value });
+  };
+
+  const handleProgramChange = (e) => {
+    setFormData({ ...formData, program: e.target.value });
   };
 
   const handleChange = (e) => {
@@ -176,21 +222,23 @@ const Application = () => {
       {error && <div className="alert error">{error}</div>}
 
       <form onSubmit={handleSubmit} className="application-form">
-        <div className="form-group">
-          <label htmlFor="gpa">GPA (3.0 - 5.0):</label>
-          <input
-            type="number"
-            id="gpa"
-            name="gpa"
-            value={formData.gpa}
-            min="3.0"
-            max="5.0"
-            step="0.1"
-            onChange={handleChange}
-            required
-            placeholder="Enter your GPA"
-          />
-        </div>
+        {userRole === "student" && (
+          <div className="form-group">
+            <label htmlFor="gpa">GPA (3.0 - 5.0):</label>
+            <input
+              type="number"
+              id="gpa"
+              name="gpa"
+              value={formData.gpa}
+              min="3.0"
+              max="5.0"
+              step="0.1"
+              onChange={handleChange}
+              required
+              placeholder="Enter your GPA"
+            />
+          </div>
+        )}
 
         <div className="form-group">
           <label htmlFor="country">Select Country:</label>
@@ -236,6 +284,28 @@ const Application = () => {
             </select>
           </div>
         )}
+
+        <div className="form-group">
+          <label htmlFor="program">Select Program:</label>
+          <select
+            id="program"
+            name="program"
+            value={formData.program}
+            onChange={handleProgramChange}
+            required
+          >
+            <option value="">-- Select a program --</option>
+            {programs.length > 0 ? (
+              programs.map((program) => (
+                <option key={program._id} value={program._id}>
+                  {program.naziv}
+                </option>
+              ))
+            ) : (
+              <option>No program found</option>
+            )}
+          </select>
+        </div>
 
         <RadioGroup
           label="First Mobility:"

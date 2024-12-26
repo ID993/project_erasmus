@@ -34,18 +34,44 @@ const formatDate = (isoDate) => {
 
 const AllApplications = () => {
   const [prijave, setPrijave] = useState([]);
-  const [prijaveProfesor, setPrijaveProfesor] = useState([]);
-  const [displayedApplications, setDisplayedApplications] = useState([]);
+  const [roles, setRoles] = useState({});
   const [filter, setFilter] = useState("all");
 
   const token = localStorage.getItem("token");
   const userRole = getUserRole(token);
 
   useEffect(() => {
+    const fetchRoles = async () => {
+      try {
+        const response = await fetch("http://localhost:5000/api/roles", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data) {
+          const rolesMap = data.reduce((map, role) => {
+            map[role.naziv] = role._id;
+            return map;
+          }, {});
+          console.log(rolesMap);
+          setRoles(rolesMap);
+        } else {
+          console.error("Error fetching roles:", data.message);
+        }
+      } catch (err) {
+        console.error("Error fetching roles:", err);
+      }
+    };
+
     const fetchApplications = async () => {
       try {
         const response = await fetch(
-          "http://localhost:5000/api/application/all-applications",
+          "http://localhost:5000/api/applications/get-all",
           {
             method: "GET",
             headers: {
@@ -58,14 +84,7 @@ const AllApplications = () => {
         const data = await response.json();
 
         if (response.ok && data.success) {
-          if (userRole === "admin") {
-            setPrijave(data.data.prijave || []);
-            setPrijaveProfesor(data.data.prijaveProfesor || []);
-          } else if (userRole === "student") {
-            setPrijave(data.data || []);
-          } else if (userRole === "profesor") {
-            setPrijaveProfesor(data.data || []);
-          }
+          setPrijave(data.data || []);
         } else {
           console.error("Error fetching applications:", data.message);
         }
@@ -73,30 +92,23 @@ const AllApplications = () => {
         console.error("Error fetching applications:", err);
       }
     };
-
+    fetchRoles();
     fetchApplications();
-  }, [token, userRole]);
-
-  useEffect(() => {
-    if (!userRole) return;
-    if (userRole === "admin") {
-      if (filter === "students") {
-        setDisplayedApplications(prijave);
-      } else if (filter === "professors") {
-        setDisplayedApplications(prijaveProfesor);
-      } else {
-        setDisplayedApplications([...prijave, ...prijaveProfesor]);
-      }
-    } else if (userRole === "student") {
-      setDisplayedApplications(prijave);
-    } else if (userRole === "profesor") {
-      setDisplayedApplications(prijaveProfesor);
-    }
-  }, [filter, prijave, prijaveProfesor, userRole]);
+  }, [token]);
 
   const handleFilterChange = (type) => {
     setFilter(type);
   };
+
+  const filteredApplications = prijave.filter((application) => {
+    if (filter === "students") {
+      return application.user?.uloga.includes(roles.student);
+    }
+    if (filter === "professors") {
+      return application.user?.uloga.includes(roles.profesor);
+    }
+    return true;
+  });
 
   return (
     <div>
@@ -131,6 +143,7 @@ const AllApplications = () => {
         <thead>
           <tr>
             <th>ID</th>
+            <th>Applied to Institution</th>
             <th>First Name</th>
             <th>Last Name</th>
             <th>Email</th>
@@ -139,9 +152,10 @@ const AllApplications = () => {
           </tr>
         </thead>
         <tbody>
-          {displayedApplications.map((application) => (
+          {filteredApplications.map((application) => (
             <tr key={application._id}>
               <td>{application._id}</td>
+              <td>{application.ustanova?.ime}</td>
               <td>{application.user?.ime || "Unknown"}</td>
               <td>{application.user?.prezime || "Unknown"}</td>
               <td>{application.user?.email || "Unknown"}</td>
