@@ -73,62 +73,70 @@ const Application = () => {
     fetchOptions();
   }, []);
 
-  useEffect(() => {
-    if (isLoggedIn) {
-      const fetchCountries = async () => {
+    useEffect(() => {
+        if (isLoggedIn) {
+            const fetchCountries = async () => {
+                try {
+                    const response = await fetch(
+                        "http://localhost:5000/api/countries/not-from",
+                        {
+                            headers: { Authorization: `Bearer ${userToken}` },
+                        }
+                    );
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        console.error("Error fetching countries:", errorData.message);
+                        setError(errorData.message || "Failed to load countries.");
+                        return;
+                    }
+
+                    const data = await response.json();
+                    //console.log("Fetched countries:", data); // Debug log
+                    setCountries(data);
+                } catch (error) {
+                    console.error("Error fetching countries:", error);
+                    setError("Failed to load countries.");
+                }
+            };
+
+            fetchCountries();
+        }
+    }, [isLoggedIn, userToken]);
+
+    const handleCountryChange = async (e) => {
+        const selectedCountry = e.target.value;
+        setFormData({ ...formData, country: selectedCountry, institution: "" });
+
         try {
-          const response = await fetch(
-            "http://localhost:5000/api/countries/not-from",
-            {
-              headers: {
-                Authorization: `Bearer ${userToken}`,
-              },
+            const response = await fetch(
+                `http://localhost:5000/api/applications/institutions/${selectedCountry}`,
+                {
+                    headers: { Authorization: `Bearer ${userToken}` },
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error(`Failed to fetch institutions: ${response.status}`);
             }
-          );
 
-          if (!response.ok) {
-            throw new Error(`HTTP error! Status: ${response.status}`);
-          }
-
-          const data = await response.json();
-          setCountries(data);
+            const data = await response.json();
+            setInstitutions(data);
         } catch (error) {
-          console.error("Error fetching countries:", error);
-          setError("Failed to load countries.");
+            console.error("Error fetching institutions:", error);
+            setError("Failed to load institutions.");
         }
-      };
+    };
 
-      fetchCountries();
+  const handleInstitutionChange = async (e) => {
+    const selectedInstitution = institutions.find(
+            (institution) => institution._id === e.target.value
+    );
+    if (selectedInstitution.quota <= selectedInstitution.applicationsAccepted) {
+            setError("Quota exceeded for the selected institution.");
+            return;
     }
-  }, [isLoggedIn, userToken]);
-
-  const handleCountryChange = async (e) => {
-    const selectedCountry = e.target.value; // This should be the country name, not the ID
-    setFormData({ ...formData, country: selectedCountry, institution: "" });
-
-    try {
-      const response = await fetch(
-        `http://localhost:5000/api/applications/institutions/${selectedCountry}`, // Pass the country name here
-        {
-          headers: {
-            Authorization: `Bearer ${userToken}`,
-          },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch institutions: ${response.status}`);
-      }
-      const data = await response.json();
-      setInstitutions(data);
-    } catch (error) {
-      console.error("Error fetching institutions:", error);
-      setError("Failed to load institutions.");
-    }
-  };
-
-  const handleInstitutionChange = (e) => {
-    setFormData({ ...formData, institution: e.target.value });
+    setFormData({ ...formData, institution: selectedInstitution._id });
   };
 
   const handleProgramChange = (e) => {

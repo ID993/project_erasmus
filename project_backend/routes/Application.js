@@ -1,151 +1,218 @@
 const express = require("express");
+const mongoose = require("mongoose");
 const router = express.Router();
 const Prijava = require("../models/Prijava");
 const Ustanova = require("../models/Ustanova");
 const Drzava = require("../models/Drzava");
 const Korisnik = require("../models/Korisnik");
-const { authenticateToken } = require("../controllers/authController"); // Destructure the correct export
+const Evaluation = require("../services/Evaluation");
+const { authenticateToken } = require("../controllers/authController");
 
 // POST route for applications
 router.post("/", authenticateToken, async (req, res) => {
-  try {
-    const {
-      gpa,
-      firstMobility,
-      motivationLetter,
-      englishProficiency,
-      destinationLanguage,
-      initiatedLLP,
-      institution,
-      program,
-      countrySelected,
-    } = req.body;
+    try {
+        const {
+            gpa, // Only relevant for students
+            firstMobility,
+            motivationLetter,
+            englishProficiency,
+            destinationLanguage,
+            initiatedLLP,
+            institution,
+            program,
+        } = req.body;
 
-    const userId = req.user.korisnik_id; // User ID from the authenticated user
-    const user = Korisnik.findById(userId);
-    // Validate the required fields...
-    if (user.uloga === "student") {
-      if (isNaN(gpa) || gpa < 3.0 || gpa > 5.0) {
-        return res.status(400).json({ message: "Invalid GPA provided." });
-      }
+        const userId = req.user.korisnik_id; // User ID from the authenticated user
+        const user = await Korisnik.findById(userId).populate("uloga"); // Populate roles
+
+        if (!user) {
+            return res.status(404).json({ message: "User not found." });
+        }
+
+        // Determine the user's role by checking the 'naziv' field in 'uloga'
+        const isStudent = user.uloga.some((role) => role.naziv === "student");
+        const isProfessor = user.uloga.some((role) => role.naziv === "profesor");
+
+        console.log("User role:", isStudent ? "student" : isProfessor ? "professor" : "unknown");
+
+        // Validate required fields
+        if (
+            firstMobility === null ||
+            motivationLetter === null ||
+            englishProficiency === null ||
+            destinationLanguage === null ||
+            initiatedLLP === null ||
+            !institution
+        ) {
+            return res.status(400).json({ message: "Missing required fields." });
+        }
+
+        // Initialize score
+        let score = 0;
+
+        // Add weights for checkboxes
+        const weights = {
+            firstMobility: 15,
+            motivationLetter: 2,
+            englishProficiency: 2,
+            destinationLanguage: 1,
+            initiatedLLP: 1,
+        };
+
+        if (firstMobility) score += weights.firstMobility;
+        if (motivationLetter) score += weights.motivationLetter;
+        if (englishProficiency) score += weights.englishProficiency;
+        if (destinationLanguage) score += weights.destinationLanguage;
+        if (initiatedLLP) score += weights.initiatedLLP;
+
+        console.log("Score after checkboxes:", score);
+
+        // Add GPA contribution for students; default GPA for professors
+        const finalGPA = isStudent ? parseFloat(gpa) : 1; // Default GPA to 1 for professors
+        if (isStudent && (isNaN(finalGPA) || finalGPA < 3.0 || finalGPA > 5.0)) {
+            return res.status(400).json({ message: "Invalid GPA provided." });
+        }
+        score += finalGPA * 8;
+
+        console.log("Final GPA:", finalGPA, "Total score:", score);
+
+        // Create and save the application
+        const application = new Prijava({
+            gpa: isStudent ? gpa : 1, // Save GPA for students; default to 1 for professors
+            firstMobility,
+            motivationLetter,
+            englishProficiency,
+            destinationLanguage,
+            initiatedLLP,
+            ustanova: institution,
+            user: userId,
+            program: program,
+            points: score, // Save calculated score
+        });
+
+        await application.save();
+
+        res.status(201).json({
+            message: "Application submitted successfully!",
+            finalScore: score,
+        });
+    } catch (error) {
+        console.error("Error processing the request:", error);
+        res.status(500).json({ message: "An error occurred while processing the application." });
     }
-
-    if (
-      firstMobility === null ||
-      motivationLetter === null ||
-      englishProficiency === null ||
-      destinationLanguage === null ||
-      initiatedLLP === null ||
-      !institution // Check if institution is provided
-    ) {
-      return res.status(400).json({ message: "Missing required fields." });
-    }
-
-    // Calculate the final score
-    const weights = {
-      firstMobility: 15,
-      motivationLetter: 2,
-      englishProficiency: 2,
-      destinationLanguage: 1,
-      initiatedLLP: 1,
-    };
-
-    let score = 0;
-
-    // Add weights if 'Yes' (true)
-    if (firstMobility) score += weights.firstMobility;
-    if (motivationLetter) score += weights.motivationLetter;
-    if (englishProficiency) score += weights.englishProficiency;
-    if (destinationLanguage) score += weights.destinationLanguage;
-    if (initiatedLLP) score += weights.initiatedLLP;
-
-    // Add GPA score
-    score += parseFloat(gpa) * 8;
-
-    // Create and save the application
-    const application = new Prijava({
-      gpa,
-      firstMobility,
-      motivationLetter,
-      englishProficiency,
-      destinationLanguage,
-      initiatedLLP,
-      ustanova: institution, // Save institution as 'ustanova'
-      user: userId, // Store the logged-in user's ID
-      program: program,
-    });
-    await application.save();
-
-    res.status(201).json({
-      message: "Application submitted successfully!",
-      finalScore: score,
-    });
-  } catch (error) {
-    console.error("Error processing the request:", error);
-    res
-      .status(500)
-      .json({ message: "An error occurred while processing the application." });
-  }
 });
 
-// Endpoint to get countries
-router.get("/countries", authenticateToken, async (req, res) => {
-  try {
-    const countries = await Drzava.find({}, { naziv: 1, _id: 0 });
-    const countryNames = countries.map((country) => country.naziv);
+// Endpoint to get countries excluding user's own country
+router.get("/not-from", authenticateToken, async (req, res) => {
+    try {
+        const { email } = req.user;
 
-    res.status(200).json(countryNames); // Send all countries without filtering
-  } catch (error) {
-    console.error("Error fetching countries:", error);
-    res.status(500).json({ message: "Error fetching countries." });
-  }
+        const user = await Korisnik.findOne({ email }).populate("ustanova");
+        if (!user || !user.ustanova) {
+            console.error("User ustanova not found for email:", email);
+            return res.status(400).json({ message: "User's ustanova not found." });
+        }
+
+        const drzavas = await Drzava.find({ _id: { $ne: user.ustanova.drzava } });
+        res.json(drzavas);
+    } catch (err) {
+        console.error("Error fetching countries:", err);
+        res.status(500).json({ message: "Failed to fetch countries" });
+    }
 });
 
 // Endpoint for getting institutions from countries
 router.get("/institutions/:country", async (req, res) => {
-  try {
-    const { country } = req.params; // country name is passed in the URL
-    const drzava = await Drzava.findOne({ naziv: country }); // Find country by name
+    try {
+        const { country } = req.params; // country name is passed in the URL
+        const drzava = await Drzava.findOne({ naziv: country }); // Find country by name
 
-    if (!drzava) {
-      return res.status(404).json({ message: `Country ${country} not found` });
+        if (!drzava) {
+            return res.status(404).json({ message: `Country ${country} not found` });
+        }
+
+        const institutions = await Ustanova.find({ drzava: drzava._id }).populate(
+            "drzava",
+            "naziv"
+        );
+        res.status(200).json(institutions);
+    } catch (error) {
+        console.error("Error fetching institutions:", error);
+        res.status(500).json({ message: "Error fetching institutions." });
     }
-
-    const institutions = await Ustanova.find({ drzava: drzava._id }).populate(
-      "drzava",
-      "naziv"
-    );
-    res.status(200).json(institutions);
-  } catch (error) {
-    console.error("Error fetching institutions:", error);
-    res.status(500).json({ message: "Error fetching institutions." });
-  }
 });
 
+// Endpoint for getting all applications for admin
 router.get("/get-all", authenticateToken, async (req, res) => {
-  try {
-    const { uloga, korisnik_id } = req.user;
-    let data = [];
+    try {
+        const { uloga, korisnik_id } = req.user;
+        let data = [];
 
-    if (uloga === "admin") {
-      const prijave = await Prijava.find()
-        .populate("user", "ime prezime email uloga")
-        .populate("ustanova", "ime");
-      data = prijave;
-    } else if (uloga === "student" || uloga === "profesor") {
-      const prijave = await Prijava.find({ user: korisnik_id })
-        .populate("user", "ime prezime email uloga")
-        .populate("ustanova", "ime");
-      data = prijave;
-    } else {
-      return res.status(403).json({ message: "Access denied." });
+        if (uloga === "admin") {
+            const prijave = await Prijava.find()
+                .populate("user", "ime prezime email uloga")
+                .populate({
+                    path: "user",
+                    populate: {
+                        path: "uloga",
+                        select: "naziv",
+                    },
+                })
+                .populate("ustanova", "ime");
+            data = prijave;
+        } else if (uloga === "student" || uloga === "profesor") {
+            const prijave = await Prijava.find({ user: korisnik_id })
+                .populate("user", "ime prezime email uloga")
+                .populate({
+                    path: "user",
+                    populate: {
+                        path: "uloga",
+                        select: "naziv",
+                    },
+                })
+                .populate("ustanova", "ime");
+            data = prijave;
+        } else {
+            return res.status(403).json({ message: "Access denied." });
+        }
+
+        res.status(200).json({ success: true, data });
+    } catch (err) {
+        console.error("Error fetching applications by role:", err);
+        res.status(500).json({ message: "Server error", error: err.message });
+    }
+});
+
+// Endpoint for evaluating applications
+router.post("/evaluate", authenticateToken, async (req, res) => {
+    if (req.user.uloga !== "admin") {
+        return res.status(403).json({ message: "Only admin can evaluate applications." });
     }
 
-    res.status(200).json({ success: true, data });
-  } catch (err) {
-    console.error("Error fetching applications by role:", err);
-    res.status(500).json({ message: "Server error", error: err.message });
-  }
+    const { institutionIds, role } = req.body;
+
+    try {
+        if (!Array.isArray(institutionIds) || institutionIds.some(id => !mongoose.Types.ObjectId.isValid(id))) {
+            return res.status(400).json({ message: "Invalid institution ID format." });
+        }
+
+        let totalAccepted = 0;
+        let totalRejected = 0;
+
+        for (const institutionId of institutionIds) {
+            const result = await Evaluation.evaluateApplications(institutionId, role);
+            totalAccepted += result.acceptedCount;
+            totalRejected += result.notAcceptedCount;
+        }
+
+        res.status(200).json({
+            message: `Evaluation completed. Accepted: ${totalAccepted}, Rejected: ${totalRejected}.`,
+        });
+    } catch (error) {
+        console.error("Evaluation Error:", error.message);
+        res.status(500).json({ message: error.message });
+    }
 });
+
 
 module.exports = router;
