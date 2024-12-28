@@ -55,7 +55,7 @@ const prijavaSchema = new mongoose.Schema(
         },
         status: {
             type: String,
-            enum: ["sent", "in progress", "done", "accepted", "not accepted"],
+            enum: ["sent", "in progress", "done", "accepted", "not accepted", "not accepted (quota reached)"],
             default: "sent",
         },
     },

@@ -41,7 +41,11 @@ const ustanovaSchema = new mongoose.Schema(
             required: true,
             default: 0,
         },
-        applicationsAccepted: {
+        applicationsAcceptedStudents: {
+            type: Number,
+            default: 0,
+        },
+        applicationsAcceptedProfessors: {
             type: Number,
             default: 0,
         },

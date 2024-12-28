@@ -1,27 +1,24 @@
 const Prijava = require("../models/Prijava");
 const Ustanova = require("../models/Ustanova");
+const mongoose = require("mongoose");
 
-// Global variables for minimal requirements
-const MINIMAL_GPA = 3.5; // Minimal GPA for students
-const MINIMAL_POINTS = 17; // Minimal points for professors
+const MINIMAL_GPA = 3.5;
+const MINIMAL_POINTS = 15;
+
 
 class Evaluation {
-    /**
-     * Evaluates and processes applications for a specific institution.
-     * 
-     * @param {string} institutionId - The ID of the institution to evaluate.
-     * @returns {Promise<object>} - Evaluation summary with accepted and not accepted applications.
-     */
     static async evaluateApplications(institutionId) {
         try {
-            // Fetch the institution and its associated applications
+            if (!institutionId || !mongoose.Types.ObjectId.isValid(institutionId)) {
+                throw new Error(`Invalid institution ID: ${institutionId}`);
+            }
+
             const institution = await Ustanova.findById(institutionId).populate("prijave");
 
             if (!institution) {
-                throw new Error("Institution not found.");
+                throw new Error(`Institution not found for ID: ${institutionId}`);
             }
 
-            // Get all "sent" applications for this institution
             const applications = await Prijava.find({ ustanova: institutionId, status: "sent" })
                 .populate({
                     path: "user",
@@ -29,43 +26,55 @@ class Evaluation {
                         path: "uloga",
                         select: "naziv",
                     },
-                }); // Populate user roles
+                });
 
             if (!applications.length) {
-                throw new Error("No applications found for this institution.");
+                return {
+                    message: "No applications found for this institution.",
+                    acceptedCount: 0,
+                    notAcceptedCount: 0,
+                };
             }
 
-            // Evaluate applications and update their status based on requirements
+            let acceptedStudents = institution.applicationsAcceptedStudents;
+            let acceptedProfessors = institution.applicationsAcceptedProfessors;
+
             for (const application of applications) {
-                const roles = application.user.uloga.map((role) => role.naziv); // Extract role names
+                const roles = application.user.uloga.map((role) => role.naziv);
 
                 if (roles.includes("student") && application.gpa >= MINIMAL_GPA) {
-                    application.status = "accepted";
+                    if (acceptedStudents < institution.quotaStudents) {
+                        application.status = "accepted";
+                        acceptedStudents++;
+                    } else {
+                        application.status = "not accepted (quota reached)";
+                    }
                 } else if (roles.includes("profesor") && application.points >= MINIMAL_POINTS) {
-                    application.status = "accepted";
+                    if (acceptedProfessors < institution.quotaProfessors) {
+                        application.status = "accepted";
+                        acceptedProfessors++;
+                    } else {
+                        application.status = "not accepted (quota reached)";
+                    }
                 } else {
                     application.status = "not accepted";
                 }
 
-                await application.save(); // Save the updated status
+                await application.save();
             }
 
-            // Count the accepted and not accepted applications
-            const acceptedCount = applications.filter(app => app.status === "accepted").length;
-            const notAcceptedCount = applications.filter(app => app.status === "not accepted").length;
-
-            // Update institution quota with the number of accepted applications
-            institution.applicationsAccepted += acceptedCount;
+            institution.applicationsAcceptedStudents = acceptedStudents;
+            institution.applicationsAcceptedProfessors = acceptedProfessors;
             await institution.save();
 
             return {
                 message: "Applications evaluated successfully.",
-                acceptedCount,
-                notAcceptedCount,
+                acceptedStudents,
+                acceptedProfessors,
             };
         } catch (error) {
-            console.error("Error evaluating applications:", error.message);
-            throw new Error("Failed to evaluate applications.");
+            console.error(`Error evaluating applications: ${error.message}`);
+            throw error;
         }
     }
 }

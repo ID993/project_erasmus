@@ -158,7 +158,10 @@ router.get("/get-all", authenticateToken, async (req, res) => {
                         select: "naziv",
                     },
                 })
-                .populate("ustanova", "ime");
+                .populate({
+                    path: "ustanova",
+                    select: "ime applicationsAcceptedStudents applicationsAcceptedProfessors quotaStudents quotaProfessors",
+                });
             data = prijave;
         } else if (uloga === "student" || uloga === "profesor") {
             const prijave = await Prijava.find({ user: korisnik_id })
@@ -170,7 +173,10 @@ router.get("/get-all", authenticateToken, async (req, res) => {
                         select: "naziv",
                     },
                 })
-                .populate("ustanova", "ime");
+                .populate({
+                    path: "ustanova",
+                    select: "ime applicationsAcceptedStudents applicationsAcceptedProfessors quotaStudents quotaProfessors",
+                });
             data = prijave;
         } else {
             return res.status(403).json({ message: "Access denied." });
@@ -182,6 +188,7 @@ router.get("/get-all", authenticateToken, async (req, res) => {
         res.status(500).json({ message: "Server error", error: err.message });
     }
 });
+
 
 // Endpoint for evaluating applications
 router.post("/evaluate", authenticateToken, async (req, res) => {
