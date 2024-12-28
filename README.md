@@ -16,6 +16,7 @@ This project is part of a university assignment, focusing on building a web appl
 - JWT-based authentication
 - Basic error handling and form validation
 - Basic form for sending application for Erasmus
+- Application evaluation based on score/GPA and different quotas for student/professor
 
 ## Contributors
 - Ivo Damjanović
