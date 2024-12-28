@@ -8,6 +8,7 @@ const countriesRoutes = require("./routes/Countries"); // Import countries route
 const programRoutes = require("./routes/ProgramRoute");
 const ustanovaRoutes = require("./routes/UstanovaRoute");
 const roleRoutes = require("./routes/RoleRoute");
+const userRoutes = require("./routes/UserRoute");
 
 // This line ensures MongoDB connection is established when the server runs
 require("./config/db"); // Import the MongoDB connection
@@ -25,6 +26,8 @@ app.get("/", (req, res) => {
 
 // Authentication routes
 app.use("/api/auth", authRoutes);
+
+app.use("/api/users", userRoutes);
 
 // Application routes
 app.use("/api/applications", applicationRoutes);

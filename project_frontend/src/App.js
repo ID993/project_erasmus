@@ -5,16 +5,15 @@ import Register from "./pages/Register";
 import Application from "./pages/Application";
 import Dashboard from "./pages/Dashboard";
 import AllApplications from "./pages/AllApplications";
-import { jwtDecode } from "jwt-decode";
+import UserProfile from "./pages/UserProfile";
+import UserList from "./pages/UserList";
+
 import "./App.css";
 
-const getUserRole = (token) => {
-  if (!token) return null;
+const parseJwt = (token) => {
   try {
-    const decodedToken = jwtDecode(token);
-    return decodedToken.uloga; // Extract the role from the token
-  } catch (err) {
-    console.error("Invalid token:", err);
+    return JSON.parse(atob(token.split(".")[1])); // Decode the token
+  } catch (e) {
     return null;
   }
 };
@@ -28,8 +27,9 @@ const App = () => {
     setIsLoggedIn(!!token);
   }, []);
 
-  const userRole = getUserRole(token);
-
+  //const userRole = getUserRole(token);
+  const userId = token ? parseJwt(token).korisnik_id : null;
+  const userRole = token ? parseJwt(token).uloga : null;
   const handleLogout = () => {
     localStorage.removeItem("token");
     setIsLoggedIn(false);
@@ -67,11 +67,19 @@ const App = () => {
                     All appplications
                   </Link>
                 )}
+                {userRole === "admin" && (
+                  <Link to="/all-users" className="nav-link">
+                    All users
+                  </Link>
+                )}
                 {userRole !== "admin" && (
                   <Link to="/all-applications" className="nav-link">
                     My appplications
                   </Link>
                 )}
+                <Link to={`/user-profile/${userId}`} className="nav-link">
+                  My Profile
+                </Link>
                 <button
                   onClick={handleLogout}
                   className="nav-link logout-btn"
@@ -101,6 +109,8 @@ const App = () => {
           <Route path="/dashboard" element={<Dashboard />} />
 
           <Route path="/all-applications" element={<AllApplications />} />
+          <Route path="/user-profile/:id" element={<UserProfile />} />
+          <Route path="/all-users" element={<UserList />} />
         </Routes>
       </main>
 
