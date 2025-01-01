@@ -17,6 +17,8 @@ This project is part of a university assignment, focusing on building a web appl
 - Basic error handling and form validation
 - Basic form for sending application for Erasmus
 - Application evaluation based on score/GPA and different quotas for student/professor
+- User profiles
+- CRUD operations for users and institutions
 
 ## Contributors
 - Ivo Damjanović
