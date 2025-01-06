@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
-const Institutions = () => {
+const InstitutionsList = () => {
     const [institutions, setInstitutions] = useState([]);
     const [searchQuery, setSearchQuery] = useState("");
     const [filteredInstitutions, setFilteredInstitutions] = useState([]);
@@ -93,7 +93,7 @@ const Institutions = () => {
     return (
         <div>
             <h1>Institutions</h1>
-            <div>
+            <div style={{ display: "flex", gap: "10px", marginBottom: "10px" }}>
                 <input
                     type="text"
                     placeholder="Search institutions..."
@@ -140,4 +140,4 @@ const Institutions = () => {
     );
 };
 
-export default Institutions;
+export default InstitutionsList;
