@@ -19,6 +19,7 @@ This project is part of a university assignment, focusing on building a web appl
 - Application evaluation based on score/GPA and different quotas for student/professor
 - User profiles
 - CRUD operations for users and institutions
+- Notification system when sending applications
 
 ## Contributors
 - Ivo Damjanović
