@@ -2,6 +2,7 @@ const express = require("express");
 const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
 const Korisnik = require("../models/Korisnik");
+const Uloga = require("../models/Uloga");
 const { authenticateToken } = require("../controllers/authController");
 
 const router = express.Router();
@@ -24,34 +25,34 @@ router.get("/", authenticateToken, adminCheck, async (req, res) => {
   }
 });
 
-router.get("/search", authenticateToken, adminCheck, async (req, res) => {
-  try {
-    const { query } = req.query;
+// router.get("/search", authenticateToken, adminCheck, async (req, res) => {
+//   try {
+//     const { query } = req.query;
 
-    if (!query || query.length < 3) {
-      return res
-        .status(400)
-        .json({ message: "Search query must be at least 3 characters." });
-    }
+//     if (!query || query.length < 3) {
+//       return res
+//         .status(400)
+//         .json({ message: "Search query must be at least 3 characters." });
+//     }
 
-    const regex = new RegExp(query, "i");
+//     const regex = new RegExp(query, "i");
 
-    const users = await Korisnik.find({
-      $or: [{ email: regex }, { ime: regex }, { prezime: regex }],
-    })
-      .populate("ustanova")
-      .populate("uloga");
+//     const users = await Korisnik.find({
+//       $or: [{ email: regex }, { ime: regex }, { prezime: regex }],
+//     })
+//       .populate("ustanova")
+//       .populate("uloga");
 
-    if (users.length === 0) {
-      return res.status(404).json({ message: "No users found." });
-    }
+//     if (users.length === 0) {
+//       return res.status(404).json({ message: "No users found." });
+//     }
 
-    res.status(200).json(users);
-  } catch (err) {
-    console.error("Error fetching users:", err);
-    res.status(500).json({ message: "Failed to fetch users." });
-  }
-});
+//     res.status(200).json(users);
+//   } catch (err) {
+//     console.error("Error fetching users:", err);
+//     res.status(500).json({ message: "Failed to fetch users." });
+//   }
+// });
 
 router.get("/:id", authenticateToken, async (req, res) => {
   try {
@@ -120,6 +121,35 @@ router.delete("/:id", authenticateToken, adminCheck, async (req, res) => {
   } catch (err) {
     console.error("Error deleting user:", err);
     res.status(500).json({ message: "Failed to delete user." });
+  }
+});
+
+router.post("/add-admin", authenticateToken, adminCheck, async (req, res) => {
+  try {
+    const { ime, prezime, email, sifra, ustanova } = req.body;
+    const existingUser = await Korisnik.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ message: "Email already exists." });
+    }
+    const hashedPassword = await bcrypt.hash(sifra, 10);
+    const adminRole = await Uloga.findOne({ naziv: "admin" });
+    if (!adminRole) {
+      return res.status(400).json({ message: "Admin role not found." });
+    }
+    const newUser = new Korisnik({
+      ime,
+      prezime,
+      email,
+      sifra: hashedPassword,
+      ustanova,
+      uloga: [adminRole._id],
+    });
+
+    const savedUser = await newUser.save();
+    res.status(201).json({ success: true, data: savedUser });
+  } catch (err) {
+    console.error("Error adding user:", err);
+    res.status(500).json({ message: "Server error", error: err.message });
   }
 });
 
