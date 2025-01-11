@@ -1,168 +1,203 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import Modal from "../Modal";
 
 const parseJwt = (token) => {
-    try {
-        return JSON.parse(atob(token.split(".")[1]));
-    } catch (e) {
-        return null;
-    }
+  try {
+    return JSON.parse(atob(token.split(".")[1]));
+  } catch (e) {
+    return null;
+  }
 };
 
 const UserList = () => {
-    const [users, setUsers] = useState([]);
-    const [searchUser, setSearchUser] = useState("");
-    const [error, setError] = useState("");
-    const navigate = useNavigate();
-    const token = localStorage.getItem("token");
+  const [users, setUsers] = useState([]);
+  const [searchUserQuery, setSearchUserQuery] = useState("");
+  const [filteredUsers, setFilteredUsers] = useState([]);
+  const [error, setError] = useState("");
+  const navigate = useNavigate();
+  const token = localStorage.getItem("token");
+  const [showModal, setShowModal] = useState(false);
+  const [userToDelete, setUserToDelete] = useState(null);
 
-    // Parse user role and ID
-    const userData = parseJwt(token);
-    const userRole = userData?.uloga;
-    const loggedUserId = userData?.korisnik_id;
+  const userData = parseJwt(token);
+  const userRole = userData?.uloga;
+  const loggedUserId = userData?.korisnik_id;
 
-    useEffect(() => {
-        fetchUsers();
-    }, []);
+  const fetchUsers = useCallback(async () => {
+    try {
+      const response = await fetch("http://localhost:5000/api/users", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-    const fetchUsers = async () => {
-        try {
-            const response = await fetch("http://localhost:5000/api/users", {
-                method: "GET",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
-                },
-            });
+      if (!response.ok) {
+        throw new Error("Failed to fetch users");
+      }
 
-            if (!response.ok) {
-                throw new Error("Failed to fetch users");
-            }
+      const data = await response.json();
+      setUsers(data);
+    } catch (err) {
+      console.error("Error fetching users:", err);
+    }
+  }, [token]); // Only re-create `fetchUsers` if `token` changes
 
-            const data = await response.json();
-            setUsers(data);
-        } catch (err) {
-            console.error("Error fetching users:", err);
-        }
-    };
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
 
-    const handleSearch = async () => {
-        if (searchUser.length < 3) {
-            setError("Search query must be at least 3 characters.");
-            return;
-        }
+  const handleSearchChange = (e) => {
+    setSearchUserQuery(e.target.value);
+    setError("");
+  };
 
-        try {
-            const response = await fetch(
-                `http://localhost:5000/api/users/search?query=${searchUser}`,
-                {
-                    method: "GET",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Authorization: `Bearer ${token}`,
-                    },
-                }
-            );
+  const filterUsers = () => {
+    if (searchUserQuery.trim() === "") {
+      setFilteredUsers(users);
+    } else {
+      const lowercasedQuery = searchUserQuery.toLowerCase();
+      const filtered = users.filter(
+        (user) =>
+          user.ime.toLowerCase().includes(lowercasedQuery) ||
+          user.prezime.toLowerCase().includes(lowercasedQuery) ||
+          user.email?.toLowerCase().includes(lowercasedQuery) ||
+          user.uloga[0]?.naziv.toLowerCase().includes(lowercasedQuery)
+      );
+      setFilteredUsers(filtered);
+    }
+  };
 
-            if (!response.ok) {
-                if (response.status === 404) {
-                    setError("No users found matching your search query.");
-                } else {
-                    setError("Failed to search users.");
-                }
-                return;
-            }
+  useEffect(() => {
+    filterUsers();
+  }, [searchUserQuery, users]);
 
-            const data = await response.json();
-            setUsers(data);
-            setError(""); // Clear any existing errors on successful search
-        } catch (err) {
-            console.error("Error searching users:", err);
-            setError("An error occurred while searching for users.");
-        }
-    };
+  const handleClose = () => {
+    setShowModal(false);
+    setUserToDelete(null);
+  };
 
-    const handleDelete = async (id) => {
-        if (!window.confirm("Are you sure you want to delete this user?")) return;
+  const handleShowModal = (userId) => {
+    setUserToDelete(userId);
+    setShowModal(true);
+  };
 
-        try {
-            const response = await fetch(`http://localhost:5000/api/users/${id}`, {
-                method: "DELETE",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
-                },
-            });
+  const handleDelete = async (id) => {
+    //if (!window.confirm("Are you sure you want to delete this user?")) return;
 
-            if (!response.ok) {
-                throw new Error("Failed to delete user");
-            }
+    try {
+      const response = await fetch(`http://localhost:5000/api/users/${id}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-            setUsers(users.filter((user) => user._id !== id));
-            alert("User deleted successfully!");
-        } catch (err) {
-            console.error("Error deleting user:", err);
-        }
-    };
+      if (!response.ok) {
+        throw new Error("Failed to delete user");
+      }
 
-    const handleDetails = (id) => {
-        navigate(`/user-profile/${id}`);
-    };
+      setUsers(users.filter((user) => user._id !== id));
+      setShowModal(false);
+    } catch (err) {
+      console.error("Error deleting user:", err);
+    }
+  };
 
-    return (
-        <div>
-            <h2>Users List</h2>
+  const handleDetails = (id) => {
+    navigate(`/user-profile/${id}`);
+  };
 
-            {/* Search Input */}
-            <div>
-                <input
-                    type="text"
-                    placeholder="Search users..."
-                    value={searchUser}
-                    onChange={(e) => {
-                        setSearchUser(e.target.value);
-                        setError(""); // Clear error when user starts typing
-                    }}
-                />
-                <button onClick={handleSearch}>Search</button>
-            </div>
+  const handleAddAdminUser = () => {
+    navigate("/add-admin");
+  };
 
-            {/* Error Message */}
-            {error && <p style={{ color: "red" }}>{error}</p>}
+  return (
+    <div className="container mt-4">
+      <h2 className="text-center mb-4">Users List</h2>
 
-            {/* Users Table */}
-            <table>
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Last Name</th>
-                        <th>Email</th>
-                        <th>Role</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {users.map((user) => (
-                        <tr key={user._id}>
-                            <td>{user.ime}</td>
-                            <td>{user.prezime}</td>
-                            <td>{user.email}</td>
-                            <td>{user.uloga[0]?.naziv || "Unknown"}</td>
-                            <td>
-                                <button onClick={() => handleDetails(user._id)}>Details</button>
-                                {userRole === "admin" && user._id !== loggedUserId && (
-                                    <button onClick={() => handleDelete(user._id)}>Delete</button>
-                                )}
-                            </td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
-
-            {/* No Users Message */}
-            {users.length === 0 && !error && <p>No users available to display.</p>}
+      <div className="input-group mb-4">
+        <input
+          type="text"
+          className="form-control"
+          placeholder="Search users..."
+          value={searchUserQuery}
+          onChange={handleSearchChange}
+        />
+        {userRole === "admin" && (
+          <button className="btn btn-success" onClick={handleAddAdminUser}>
+            Add Admin User
+          </button>
+        )}
+      </div>
+      {/* Error Message */}
+      {error && (
+        <div className="alert alert-danger" role="alert">
+          {error}
         </div>
-    );
+      )}
+
+      {/* Users Table */}
+      <div className="table-responsive">
+        <table className="table table-striped table-hover table-bordered align-middle">
+          <thead className="table-dark">
+            <tr>
+              <th>Name</th>
+              <th>Last Name</th>
+              <th>Email</th>
+              <th>Role</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredUsers.map((user) => (
+              <tr key={user._id}>
+                <td>{user.ime}</td>
+                <td>{user.prezime}</td>
+                <td>{user.email}</td>
+                <td>{user.uloga[0]?.naziv || "Unknown"}</td>
+                <td>
+                  <div className="d-flex gap-2">
+                    <button
+                      className="btn btn-primary btn-sm"
+                      onClick={() => handleDetails(user._id)}
+                    >
+                      Details
+                    </button>
+                    {userRole === "admin" && user._id !== loggedUserId && (
+                      <button
+                        className="btn btn-danger btn-sm"
+                        onClick={handleShowModal}
+                      >
+                        Delete
+                      </button>
+                    )}
+                    <Modal
+                      showModal={showModal}
+                      handleClose={handleClose}
+                      deleteAction={() => handleDelete(user._id)} // Pass the function reference
+                      entityId={userToDelete}
+                      entityName="user"
+                    />
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* No Users Message */}
+      {users.length === 0 && !error && (
+        <div className="alert alert-info" role="alert">
+          No users available to display.
+        </div>
+      )}
+    </div>
+  );
 };
 
 export default UserList;

@@ -1,4 +1,4 @@
-/* /frontend/src/App.css */
+/* 
 body {
   font-family: "Arial", sans-serif;
   margin: 0;
@@ -27,7 +27,7 @@ body {
 
 .navbar {
   display: flex;
-  justify-content: space-between; /* Space out the left and right sections */
+  justify-content: space-between;
   align-items: center;
   margin-top: 10px;
 }
@@ -114,4 +114,4 @@ h2 {
 .active {
   background-color: blue;
   color: white;
-}
+} */

@@ -170,136 +170,158 @@ const AllApplications = () => {
   });
 
   return (
-    <div>
-      <h1>Applications</h1>
+    <div className="container mt-5">
+      <h1 className="text-center mb-4 fw-bold">Applications</h1>
+
+      {/* Admin Filters and Evaluate Button */}
       {userRole === "admin" && (
-        <div>
-          <button
-            className={filter === "all" ? "active" : ""}
-            onClick={() => handleFilterChange("all")}
-          >
-            All Applications
-          </button>
-          <button
-            className={filter === "students" ? "active" : ""}
-            onClick={() => handleFilterChange("students")}
-          >
-            Student Applications
-          </button>
-          <button
-            className={filter === "professors" ? "active" : ""}
-            onClick={() => handleFilterChange("professors")}
-          >
-            Professor Applications
-          </button>
-        </div>
-      )}
-      {userRole === "admin" && (
-        <div>
-          <button
-            style={{ margin: "20px 0" }}
-            onClick={handleEvaluation}
-            disabled={isEvaluating}
-          >
-            {isEvaluating ? "Evaluating..." : "Evaluate All Applications"}
-          </button>
+        <>
+          <div className="btn-group mb-4 d-flex justify-content-center">
+            <button
+              className={`btn btn-outline-primary ${
+                filter === "all" ? "active" : ""
+              }`}
+              onClick={() => handleFilterChange("all")}
+            >
+              All Applications
+            </button>
+            <button
+              className={`btn btn-outline-primary ${
+                filter === "students" ? "active" : ""
+              }`}
+              onClick={() => handleFilterChange("students")}
+            >
+              Student Applications
+            </button>
+            <button
+              className={`btn btn-outline-primary ${
+                filter === "professors" ? "active" : ""
+              }`}
+              onClick={() => handleFilterChange("professors")}
+            >
+              Professor Applications
+            </button>
+          </div>
+
+          <div className="d-flex justify-content-center mb-4">
+            <button
+              className="btn btn-success"
+              onClick={handleEvaluation}
+              disabled={isEvaluating}
+            >
+              {isEvaluating ? "Evaluating..." : "Evaluate All Applications"}
+            </button>
+          </div>
+
           {successMessage && (
-            <div className="alert success">{successMessage}</div>
+            <div className="alert alert-success text-center" role="alert">
+              {successMessage}
+            </div>
           )}
-          {error && <div className="alert error">{error}</div>}
-        </div>
+          {error && (
+            <div className="alert alert-danger text-center" role="alert">
+              {error}
+            </div>
+          )}
+        </>
       )}
+
+      {/* Applications Table */}
       {filteredApplications.length === 0 ? (
-        <p>
+        <div className="alert alert-info text-center">
           {filter === "students"
             ? "No student applications found."
             : filter === "professors"
             ? "No professor applications found."
             : "No applications available."}
-        </p>
+        </div>
       ) : (
-        <table border="1" style={{ marginTop: "20px" }}>
-          <thead>
-            <tr>
-              <th>Institution</th>
-              <th>Accepted Students</th>
-              <th>Accepted Professors</th>
-              <th>Quota Students</th>
-              <th>Quota Professors</th>
-              <th>First Name</th>
-              <th>Last Name</th>
-              <th>Email</th>
-              <th>Role</th>
-              <th>Status</th>
-              <th>Date</th>
-              {userRole !== "admin" && <th>Action</th>}
-            </tr>
-          </thead>
-          <tbody>
-            {filteredApplications.map((application) => (
-              <tr key={application._id}>
-                <td>{application.ustanova?.ime || "No Institution"}</td>
-                <td>
-                  {application.ustanova?.applicationsAcceptedStudents || 0}
-                </td>
-                <td>
-                  {application.ustanova?.applicationsAcceptedProfessors || 0}
-                </td>
-                <td>{application.ustanova?.quotaStudents || "Unknown"}</td>
-                <td>{application.ustanova?.quotaProfessors || "Unknown"}</td>
-                <td>{application.user?.ime || "Unknown"}</td>
-                <td>{application.user?.prezime || "Unknown"}</td>
-                <td>{application.user?.email || "Unknown"}</td>
-                <td>
-                  {application.user?.uloga
-                    ?.map((role) => role.naziv)
-                    .join(", ") || "Unknown"}
-                </td>
-                <td>{application.status || "Unknown"}</td>
-                <td>{formatDate(application.createdAt) || "Unknown"}</td>
-                <td>
-                  {userRole !== "admin" && application.status !== "sent" && (
-                    <button
-                      style={{
-                        margin: "10px 0",
-                        backgroundColor:
-                          application.status === "confirmed"
-                            ? "#28a745"
-                            : application.status === "declined"
-                            ? "#dc3545"
-                            : "#007bff",
-                        color: "#fff",
-                        border: "none",
-                        padding: "10px 15px",
-                        cursor:
-                          application.status === "confirmed" ||
-                          application.status === "declined"
-                            ? "not-allowed"
-                            : "pointer",
-                        opacity:
-                          application.status === "confirmed" ||
-                          application.status === "declined"
-                            ? 0.7
-                            : 1,
-                      }}
-                      onClick={() => handleConfirmation(application._id)}
-                      disabled={
-                        application.status === "confirmed" ||
-                        application.status === "declined"
-                      }
-                    >
-                      {application.status === "confirmed"
-                        ? "Confirmed"
-                        : application.status === "declined"
-                        ? "Declined"
-                        : "Confirm"}
-                    </button>
-                  )}
-                </td>
+        <div className="table-responsive">
+          <table className="table table-striped table-hover table-bordered align-middle">
+            <thead className="table-dark">
+              <tr>
+                <th>Institution</th>
+                <th>Program</th>
+                {userRole === "admin" && (
+                  <>
+                    <th>Confirmed Students</th>
+                    <th>Confirmed Professors</th>
+                    <th>Quota Students</th>
+                    <th>Quota Professors</th>
+                  </>
+                )}
+                <th>First Name</th>
+                <th>Last Name</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Status</th>
+                <th>Date</th>
+                {userRole !== "admin" && <th>Action</th>}
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {filteredApplications.map((application) => (
+                <tr key={application._id}>
+                  <td>{application.ustanova?.ime || "No Institution"}</td>
+                  <td>{application.program?.naziv || "No Program"}</td>
+                  {userRole === "admin" && (
+                    <>
+                      <td>
+                        {application.ustanova?.applicationsAcceptedStudents ||
+                          0}
+                      </td>
+                      <td>
+                        {application.ustanova?.applicationsAcceptedProfessors ||
+                          0}
+                      </td>
+                      <td>
+                        {application.ustanova?.quotaStudents || "Unknown"}
+                      </td>
+                      <td>
+                        {application.ustanova?.quotaProfessors || "Unknown"}
+                      </td>
+                    </>
+                  )}
+                  <td>{application.user?.ime || "Unknown"}</td>
+                  <td>{application.user?.prezime || "Unknown"}</td>
+                  <td>{application.user?.email || "Unknown"}</td>
+                  <td>{application.user?.uloga?.[0]?.naziv || "Unknown"}</td>
+                  <td>{application.status || "Unknown"}</td>
+                  <td>{formatDate(application.createdAt) || "Unknown"}</td>
+                  {userRole !== "admin" && (
+                    <td>
+                      <button
+                        className={`btn btn-sm ${
+                          application.status === "confirmed"
+                            ? "btn-success"
+                            : application.status === "declined"
+                            ? "btn-danger"
+                            : application.status === "sent"
+                            ? "btn-secondary"
+                            : "btn-primary"
+                        }`}
+                        disabled={
+                          application.status === "confirmed" ||
+                          application.status === "declined" ||
+                          application.status === "sent"
+                        }
+                        onClick={() => handleConfirmation(application._id)}
+                      >
+                        {application.status === "confirmed"
+                          ? "Confirmed"
+                          : application.status === "declined"
+                          ? "Declined"
+                          : application.status === "sent"
+                          ? "Sent"
+                          : "Confirm"}
+                      </button>
+                    </td>
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );

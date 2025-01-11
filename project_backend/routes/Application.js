@@ -32,6 +32,33 @@ router.post("/", authenticateToken, async (req, res) => {
       return res.status(404).json({ message: "User not found." });
     }
 
+    const otherApplications = await Prijava.find({ user: userId }).populate(
+      "ustanova program"
+    );
+
+    const hasConfirmedApplication = otherApplications.some(
+      (application) => application.status === "confirmed"
+    );
+
+    if (hasConfirmedApplication) {
+      return res.status(400).json({
+        message:
+          "You cannot submit any more applications as one is already confirmed.",
+      });
+    }
+
+    const existingApplication = await Prijava.findOne({
+      user: userId,
+      ustanova: institution,
+      program: program,
+    });
+
+    if (existingApplication) {
+      return res.status(400).json({
+        message: "You have already applied to this institution and program.",
+      });
+    }
+
     // Determine the user's role by checking the 'naziv' field in 'uloga'
     const isStudent = user.uloga.some((role) => role.naziv === "student");
     const isProfessor = user.uloga.some((role) => role.naziv === "profesor");
@@ -277,7 +304,8 @@ router.get("/get-all", authenticateToken, async (req, res) => {
           path: "ustanova",
           select:
             "ime applicationsAcceptedStudents applicationsAcceptedProfessors quotaStudents quotaProfessors",
-        });
+        })
+        .populate("program");
       data = prijave;
     } else if (uloga === "student" || uloga === "profesor") {
       const prijave = await Prijava.find({ user: korisnik_id })
@@ -293,7 +321,8 @@ router.get("/get-all", authenticateToken, async (req, res) => {
           path: "ustanova",
           select:
             "ime applicationsAcceptedStudents applicationsAcceptedProfessors quotaStudents quotaProfessors",
-        });
+        })
+        .populate("program");
       data = prijave;
     } else {
       return res.status(403).json({ message: "Access denied." });
