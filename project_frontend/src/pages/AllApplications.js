@@ -58,6 +58,7 @@ const triggerEvaluation = async (applications) => {
     const data = await response.json();
     if (response.ok) {
       //alert(data.message);
+
       return { successMessage: "Applications evaluated succesfully." };
     } else {
       console.error("Backend Error:", data.message);
@@ -80,33 +81,32 @@ const AllApplications = () => {
   const token = localStorage.getItem("token");
   const userRole = getUserRole(token);
 
-  useEffect(() => {
-    const fetchApplications = async () => {
-      try {
-        const response = await fetch(
-          "http://localhost:5000/api/applications/get-all",
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-
-        const data = await response.json();
-        if (response.ok && data.success) {
-          setApplications(data.data || []);
-        } else {
-          console.error("Error fetching applications:", data.message);
+  const fetchApplications = async () => {
+    try {
+      const response = await fetch(
+        "http://localhost:5000/api/applications/get-all",
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
         }
-      } catch (err) {
-        console.error("Error fetching applications:", err);
-      }
-    };
+      );
 
+      const data = await response.json();
+      if (response.ok && data.success) {
+        setApplications(data.data || []);
+      } else {
+        console.error("Error fetching applications:", data.message);
+      }
+    } catch (err) {
+      console.error("Error fetching applications:", err);
+    }
+  };
+  useEffect(() => {
     fetchApplications();
-  }, [token]);
+  });
 
   const handleFilterChange = (type) => {
     setFilter(type);
@@ -119,6 +119,7 @@ const AllApplications = () => {
     const result = await triggerEvaluation(applications);
     if (result.successMessage) {
       setSuccessMessage(result.successMessage);
+      fetchApplications();
     } else if (result.error) {
       setError(result.error);
     }
@@ -131,7 +132,7 @@ const AllApplications = () => {
       const response = await fetch(
         `http://localhost:5000/api/applications/confirm-application/${applicationId}`,
         {
-          method: "GET", // Or "PUT" depending on your backend route
+          method: "GET",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,

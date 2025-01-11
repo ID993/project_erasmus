@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
 const Korisnik = require("../models/Korisnik");
 const Uloga = require("../models/Uloga");
+const Prijava = require("../models/Prijava");
 const { authenticateToken } = require("../controllers/authController");
 
 const router = express.Router();
@@ -111,6 +112,7 @@ router.delete("/:id", authenticateToken, adminCheck, async (req, res) => {
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ message: "Invalid user ID." });
     }
+    await Prijava.deleteMany({ user: id });
 
     const user = await Korisnik.findByIdAndDelete(id);
     if (!user) {
