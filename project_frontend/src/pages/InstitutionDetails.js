@@ -2,6 +2,14 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Modal from "../Modal";
 
+const parseJwt = (token) => {
+  try {
+    return JSON.parse(atob(token.split(".")[1]));
+  } catch (e) {
+    return null;
+  }
+};
+
 const InstitutionDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -10,6 +18,11 @@ const InstitutionDetails = () => {
   const [showModal, setShowModal] = useState(false);
   const [deleteEntityId, setDeleteEntityId] = useState(null);
   const [entityName, setEntityName] = useState("");
+
+  const token = localStorage.getItem("token");
+  const userData = parseJwt(token);
+  const userRole = userData?.uloga;
+  const userIdFromToken = userData?.korisnik_id;
 
   useEffect(() => {
     const fetchInstitutionDetails = async () => {
@@ -110,21 +123,25 @@ const InstitutionDetails = () => {
           <p>
             <strong>Quota for Professors:</strong> {institution.quotaProfessors}
           </p>
-          <div className="d-flex justify-content-center gap-2 mt-4">
-            <button className="btn btn-primary" onClick={handleEdit}>
-              Edit
-            </button>
-            <button className="btn btn-danger" onClick={handleShowModal}>
-              Delete
-            </button>
-            <Modal
-              showModal={showModal}
-              handleClose={handleClose}
-              deleteAction={() => handleDelete(institution._id)}
-              entityId={deleteEntityId}
-              entityName={entityName}
-            />
-          </div>
+          {userRole === "admin" && (
+            <div className="d-flex justify-content-center gap-2 mt-4">
+              <button className="btn btn-primary" onClick={handleEdit}>
+                Edit
+              </button>
+
+              <button className="btn btn-danger" onClick={handleShowModal}>
+                Delete
+              </button>
+
+              <Modal
+                showModal={showModal}
+                handleClose={handleClose}
+                deleteAction={() => handleDelete(institution._id)}
+                entityId={deleteEntityId}
+                entityName={entityName}
+              />
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -22,7 +22,7 @@ router.get("/", async (req, res) => {
 router.get("/not-from", authenticateToken, async (req, res) => {
   try {
     const { korisnik_id, email } = req.user;
-    console.log(korisnik_id);
+    //console.log(korisnik_id);
     //const user = await Korisnik.findOne({ email }).populate("ustanova");
     const user = await Korisnik.findById(korisnik_id).populate("ustanova");
     const drzave = await Drzava.find();
@@ -41,7 +41,7 @@ router.get("/not-from", authenticateToken, async (req, res) => {
       return res.status(404).json({ message: "User's ustanova not found." });
     }
     const userDrzavaId = userUstanova.drzava._id;
-    console.log(userDrzavaId);
+    //console.log(userDrzavaId);
     const drzavas = await Drzava.find({ _id: { $ne: userDrzavaId } });
     res.json(drzavas);
   } catch (err) {
