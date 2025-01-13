@@ -196,7 +196,9 @@ router.get("/confirm-application/:id", authenticateToken, async (req, res) => {
     // }
 
     for (const application of otherApplications) {
-      application.status = "declined";
+      if (application.status === "accepted") {
+        application.status = "declined";
+      }
 
       if (isStudent && application.ustanova._id.equals(institution._id)) {
         institution.applicationsAcceptedStudents = Math.max(
