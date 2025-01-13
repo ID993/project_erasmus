@@ -299,12 +299,18 @@ const AllApplications = () => {
                             ? "btn-danger"
                             : application.status === "sent"
                             ? "btn-secondary"
+                            : application.status === "not accepted" ||
+                              application.status ===
+                                "not accepted (quota reached)"
+                            ? "btn-danger"
                             : "btn-primary"
                         }`}
                         disabled={
                           application.status === "confirmed" ||
                           application.status === "declined" ||
-                          application.status === "sent"
+                          application.status === "sent" ||
+                          application.status === "not accepted" ||
+                          application.status === "not accepted (quota reached)"
                         }
                         onClick={() => handleConfirmation(application._id)}
                       >
@@ -314,6 +320,10 @@ const AllApplications = () => {
                           ? "Declined"
                           : application.status === "sent"
                           ? "Sent"
+                          : application.status === "not accepted" ||
+                            application.status ===
+                              "not accepted (quota reached)"
+                          ? "Not accepted"
                           : "Confirm"}
                       </button>
                     </td>
