@@ -455,7 +455,7 @@ const Application = () => {
         <div className="d-grid">
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || !isApplicationOpen}
             className="btn btn-primary btn-lg"
           >
             {loading ? "Submitting..." : "Submit Application"}

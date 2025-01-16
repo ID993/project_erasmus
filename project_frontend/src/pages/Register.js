@@ -78,10 +78,7 @@ const Register = () => {
   };
 
   return (
-    <div
-      className="container d-flex flex-column align-items-center py-5 bg-light rounded shadow"
-      style={{ height: "82vh" }}
-    >
+    <div className="container d-flex flex-column align-items-center py-5 bg-light rounded shadow">
       <h2 className="mb-4 fw-bold text-center">Register</h2>
 
       {/* Success Message */}

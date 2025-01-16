@@ -179,11 +179,13 @@ router.get("/confirm-application/:id", authenticateToken, async (req, res) => {
     await applicationToConfirm.save();
 
     const institution = applicationToConfirm.ustanova;
+    const institutionToUpdate = await Ustanova.findById(institution._id);
     if (isStudent) {
-      institution.applicationsAcceptedStudents += 1;
+      institutionToUpdate.applicationsAcceptedStudents += 1;
     } else if (isProfessor) {
-      institution.applicationsAcceptedProfessors += 1;
+      institutionToUpdate.applicationsAcceptedProfessors += 1;
     }
+    await institutionToUpdate.save();
 
     const otherApplications = await Prijava.find({
       user: applicationToConfirm.user._id,
@@ -196,24 +198,23 @@ router.get("/confirm-application/:id", authenticateToken, async (req, res) => {
     // }
 
     for (const application of otherApplications) {
-      if (application.status === "accepted") {
+      if (application.status === "accepted" || application.status === "sent") {
         application.status = "declined";
       }
-
-      if (isStudent && application.ustanova._id.equals(institution._id)) {
-        institution.applicationsAcceptedStudents = Math.max(
-          0,
-          institution.applicationsAcceptedStudents - 1
-        );
-      } else if (
-        isProfessor &&
-        application.ustanova._id.equals(institution._id)
-      ) {
-        institution.applicationsAcceptedProfessors = Math.max(
-          0,
-          institution.applicationsAcceptedProfessors - 1
-        );
-      }
+      // if (isStudent && application.ustanova._id.equals(institution._id)) {
+      //   institution.applicationsAcceptedStudents = Math.max(
+      //     0,
+      //     institution.applicationsAcceptedStudents - 1
+      //   );
+      // } else if (
+      //   isProfessor &&
+      //   application.ustanova._id.equals(institution._id)
+      // ) {
+      //   institution.applicationsAcceptedProfessors = Math.max(
+      //     0,
+      //     institution.applicationsAcceptedProfessors - 1
+      //   );
+      // }
       await application.save();
     }
 
